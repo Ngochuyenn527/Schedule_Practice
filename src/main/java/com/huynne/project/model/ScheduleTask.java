@@ -11,15 +11,13 @@ public class ScheduleTask {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-
     private String cronValue;
 
     private String description;
 
-    private Boolean active;
+    private Boolean active = true;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
             name = "chat_schedule",
             joinColumns = @JoinColumn(name = "schedule_id", referencedColumnName = "id"),
@@ -33,14 +31,6 @@ public class ScheduleTask {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getCronValue() {

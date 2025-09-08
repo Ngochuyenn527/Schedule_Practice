@@ -8,6 +8,7 @@ import com.huynne.project.repository.ScheduleTaskRepository;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -22,13 +23,12 @@ public class DynamicSchedulerService {
 
     private String cronDefault = "*/500 * * * * *"; // mặc định 500s
     private final ScheduleTaskRepository scheduleTaskRepository;
-    private final MessageSender messageSender;
 
     public DynamicSchedulerService(ThreadPoolTaskScheduler scheduler, ScheduleTaskRepository scheduleTaskRepository) {
         this.scheduler = scheduler;
         this.scheduleTaskRepository = scheduleTaskRepository;
-        this.messageSender = HuyenBot.messageSender;
     }
+
 
     public void startAllTask() {
 
@@ -41,6 +41,7 @@ public class DynamicSchedulerService {
         if (scheduledTasks.containsKey(scheduleTask.getId())) {
             scheduledTasks.get(scheduleTask.getId()).cancel(true); // stop scheduleTask cũ
         }
+        MessageSender messageSender = BotRegister.messageSender;
 
         ScheduledFuture<?> future = scheduler.schedule(
                 () -> scheduleTask.getChatList().forEach(
@@ -50,11 +51,11 @@ public class DynamicSchedulerService {
         scheduledTasks.put(scheduleTask.getId(), future);
     }
 
-
+    @Transactional
     public ScheduleTask addTask(ScheduleTask scheduleTask) {
         ScheduleTask task = scheduleTaskRepository.save(scheduleTask);
-        if (scheduleTask.getActive()) {
-            restartTask(scheduleTask);
+        if (task.getActive() && !task.getChatList().isEmpty()) {
+            restartTask(task);
         }
         return task;
     }
@@ -65,6 +66,10 @@ public class DynamicSchedulerService {
         if (future != null) {
             future.cancel(true);
         }
+    }
+
+    public boolean isValidTime(String cron) {
+        return true; // todo: Validate cron
     }
 }
 
